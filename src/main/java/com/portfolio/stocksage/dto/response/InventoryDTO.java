@@ -33,7 +33,7 @@ public class InventoryDTO {
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-class ProductSummaryDTO {
+public class ProductSummaryDTO {
     private Long id;
     private String sku;
     private String name;
@@ -45,7 +45,7 @@ class ProductSummaryDTO {
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-class WarehouseSummaryDTO {
+public class WarehouseSummaryDTO {
     private Long id;
     private String name;
     private String location;
