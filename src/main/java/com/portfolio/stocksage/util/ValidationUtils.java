@@ -1,118 +1,124 @@
 package com.portfolio.stocksage.util;
 
+import org.springframework.util.StringUtils;
+
+import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
 /**
- * Utility class for common validation operations
+ * Utility class for validation operations
  */
-public class ValidationUtils {
+public final class ValidationUtils {
 
-    // Regular expression for a valid email format
-    private static final String EMAIL_REGEX = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
+    // Email validation regular expression
+    private static final String EMAIL_PATTERN =
+            "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@" +
+                    "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";
 
-    // Regular expression for a valid phone number
-    private static final String PHONE_REGEX = "^\\+?[0-9]{8,15}$";
-    private static final Pattern PHONE_PATTERN = Pattern.compile(PHONE_REGEX);
+    private static final Pattern PATTERN_EMAIL = Pattern.compile(EMAIL_PATTERN);
 
-    // SKU validation pattern - alphanumeric with hyphens, underscores
-    private static final String SKU_REGEX = "^[a-zA-Z0-9_-]{3,50}$";
-    private static final Pattern SKU_PATTERN = Pattern.compile(SKU_REGEX);
+    // SKU validation pattern - alphanumeric with optional hyphens
+    private static final String SKU_PATTERN = "^[A-Za-z0-9\\-]+$";
+    private static final Pattern PATTERN_SKU = Pattern.compile(SKU_PATTERN);
 
-    // Username validation pattern - alphanumeric with underscores
-    private static final String USERNAME_REGEX = "^[a-zA-Z0-9_]{3,50}$";
-    private static final Pattern USERNAME_PATTERN = Pattern.compile(USERNAME_REGEX);
+    // Phone validation pattern - Allow international format
+    private static final String PHONE_PATTERN = "^\\+?[0-9\\-\\s\\(\\)]{8,20}$";
+    private static final Pattern PATTERN_PHONE = Pattern.compile(PHONE_PATTERN);
 
-    // Private constructor to prevent instantiation
     private ValidationUtils() {
-        throw new AssertionError("ValidationUtils is a utility class and should not be instantiated");
+        // Private constructor to prevent instantiation
     }
 
     /**
-     * Validates if the given email is in a correct format
+     * Validate email format
      *
-     * @param email the email to validate
-     * @return true if the email is valid, false otherwise
+     * @param email Email to validate
+     * @return True if email format is valid
      */
     public static boolean isValidEmail(String email) {
-        if (email == null || email.isEmpty()) {
-            return false;
-        }
-        return EMAIL_PATTERN.matcher(email).matches();
+        return email != null && PATTERN_EMAIL.matcher(email).matches();
     }
 
     /**
-     * Validates if the given phone number is in a correct format
+     * Validate SKU format
      *
-     * @param phone the phone number to validate
-     * @return true if the phone number is valid, false otherwise
-     */
-    public static boolean isValidPhone(String phone) {
-        if (phone == null || phone.isEmpty()) {
-            return false;
-        }
-        return PHONE_PATTERN.matcher(phone).matches();
-    }
-
-    /**
-     * Validates if the given SKU matches the required pattern
-     *
-     * @param sku the SKU to validate
-     * @return true if the SKU is valid, false otherwise
+     * @param sku SKU to validate
+     * @return True if SKU format is valid
      */
     public static boolean isValidSku(String sku) {
-        if (sku == null || sku.isEmpty()) {
-            return false;
-        }
-        return SKU_PATTERN.matcher(sku).matches();
+        return sku != null && PATTERN_SKU.matcher(sku).matches();
     }
 
     /**
-     * Validates if the given username matches the required pattern
+     * Validate phone number format
      *
-     * @param username the username to validate
-     * @return true if the username is valid, false otherwise
+     * @param phone Phone number to validate
+     * @return True if phone format is valid
      */
-    public static boolean isValidUsername(String username) {
-        if (username == null || username.isEmpty()) {
-            return false;
-        }
-        return USERNAME_PATTERN.matcher(username).matches();
+    public static boolean isValidPhoneNumber(String phone) {
+        return phone != null && PATTERN_PHONE.matcher(phone).matches();
     }
 
     /**
-     * Validates if the given number is positive
+     * Validate price value
      *
-     * @param number the number to validate
-     * @return true if the number is positive, false otherwise
+     * @param price Price to validate
+     * @return True if price is valid (non-negative)
      */
-    public static boolean isPositive(Number number) {
-        if (number == null) {
-            return false;
-        }
-        return number.doubleValue() > 0;
+    public static boolean isValidPrice(BigDecimal price) {
+        return price != null && price.compareTo(BigDecimal.ZERO) >= 0;
     }
 
     /**
-     * Validates if the given number is positive or zero
+     * Validate quantity value
      *
-     * @param number the number to validate
-     * @return true if the number is positive or zero, false otherwise
+     * @param quantity Quantity to validate
+     * @return True if quantity is valid (non-negative)
      */
-    public static boolean isPositiveOrZero(Number number) {
-        if (number == null) {
-            return false;
-        }
-        return number.doubleValue() >= 0;
+    public static boolean isValidQuantity(Integer quantity) {
+        return quantity != null && quantity >= 0;
     }
 
     /**
-     * Validates if the given string is null or empty
+     * Validate string is not empty and within length constraints
      *
-     * @param str the string to validate
-     * @return true if the string is null or empty, false otherwise
+     * @param value String to validate
+     * @param minLength Minimum length
+     * @param maxLength Maximum length
+     * @return True if string is valid
      */
-    public static boolean isNullOrEmpty(String str) {
-        return str == null || str.trim().isEmpty();
+    public static boolean isValidString(String value, int minLength, int maxLength) {
+        return value != null && value.length() >= minLength && value.length() <= maxLength;
+    }
+
+    /**
+     * Validate password strength
+     *
+     * @param password Password to validate
+     * @return True if password is strong enough
+     */
+    public static boolean isStrongPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+
+        boolean hasUppercase = false;
+        boolean hasLowercase = false;
+        boolean hasDigit = false;
+        boolean hasSpecial = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUppercase = true;
+            } else if (Character.isLowerCase(c)) {
+                hasLowercase = true;
+            } else if (Character.isDigit(c)) {
+                hasDigit = true;
+            } else {
+                hasSpecial = true;
+            }
+        }
+
+        return hasUppercase && hasLowercase && (hasDigit || hasSpecial);
     }
 }

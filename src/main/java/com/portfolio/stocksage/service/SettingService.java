@@ -1,103 +1,70 @@
 package com.portfolio.stocksage.service;
 
-import com.portfolio.stocksage.entity.Setting;
-
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-/**
- * Service for managing application settings
- */
 public interface SettingService {
 
     /**
-     * Get a setting by ID
+     * Get all application settings
      */
-    Setting getSettingById(Long id);
+    Map<String, String> getAllSettings();
 
     /**
-     * Get a setting by name
+     * Get a setting by key
+     *
+     * @param key Setting key
+     * @return Setting value, or null if not found
      */
-    Optional<Setting> getSettingByName(String name);
+    String getSetting(String key);
 
     /**
-     * Get a setting by name and scope
+     * Get a setting by key with a default value if not found
+     *
+     * @param key Setting key
+     * @param defaultValue Default value if setting not found
+     * @return Setting value or default value
      */
-    Optional<Setting> getSettingByNameAndScope(String name, String scope);
+    String getSetting(String key, String defaultValue);
 
     /**
-     * Get a setting value by name, returning a default value if not found
+     * Update a setting
+     *
+     * @param key Setting key
+     * @param value New setting value
      */
-    <T> T getSettingValue(String name, T defaultValue);
+    void updateSetting(String key, String value);
 
     /**
-     * Get a setting value by name and scope, returning a default value if not found
+     * Update multiple settings at once
+     *
+     * @param settings Map of setting keys and values
      */
-    <T> T getSettingValue(String name, String scope, T defaultValue);
+    void updateSettings(Map<String, String> settings);
 
     /**
-     * Save a setting
+     * Reset all settings to their default values
      */
-    Setting saveSetting(Setting setting);
-
-    /**
-     * Save a setting with name, value, and scope
-     */
-    Setting saveSetting(String name, Object value, String scope);
+    void resetToDefaults();
 
     /**
      * Delete a setting
+     *
+     * @param key Setting key
      */
-    void deleteSetting(Long id);
+    void deleteSetting(String key);
 
     /**
-     * Delete a setting by name
+     * Get the low stock threshold value
      */
-    void deleteSettingByName(String name);
+    int getLowStockThreshold();
 
     /**
-     * Delete a setting by name and scope
+     * Check if inventory notifications are enabled
      */
-    void deleteSettingByNameAndScope(String name, String scope);
+    boolean isNotificationsEnabled();
 
     /**
-     * Get all settings
+     * Check if email notifications are enabled
      */
-    List<Setting> getAllSettings();
-
-    /**
-     * Get settings by scope
-     */
-    List<Setting> getSettingsByScope(String scope);
-
-    /**
-     * Get visible settings
-     */
-    List<Setting> getVisibleSettings();
-
-    /**
-     * Get visible settings by scope
-     */
-    List<Setting> getVisibleSettingsByScope(String scope);
-
-    /**
-     * Get settings as a map of name to value
-     */
-    Map<String, Object> getSettingsAsMap();
-
-    /**
-     * Get settings as a map of name to value by scope
-     */
-    Map<String, Object> getSettingsAsMapByScope(String scope);
-
-    /**
-     * Reload settings from the database
-     */
-    void reloadSettings();
-
-    /**
-     * Initialize default settings
-     */
-    void initializeDefaultSettings();
+    boolean isEmailNotificationsEnabled();
 }

@@ -8,30 +8,57 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * Utility class for file operations
  */
-public class FileUtils {
+public final class FileUtils {
 
-    private static final List<String> ALLOWED_IMAGE_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif");
-    private static final List<String> ALLOWED_DOCUMENT_EXTENSIONS = Arrays.asList("pdf", "doc", "docx", "xls", "xlsx", "csv");
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    // Allowed image file extensions
+    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = new HashSet<>(Arrays.asList(
+            "jpg", "jpeg", "png", "gif", "bmp", "webp"
+    ));
+
+    // Allowed document file extensions
+    private static final Set<String> ALLOWED_DOCUMENT_EXTENSIONS = new HashSet<>(Arrays.asList(
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"
+    ));
 
     private FileUtils() {
         // Private constructor to prevent instantiation
-        throw new AssertionError("FileUtils is a utility class and should not be instantiated");
     }
 
     /**
-     * Generate a unique filename with the original extension
+     * Check if file extension is allowed for images
      *
-     * @param originalFilename The original filename
-     * @return A unique filename with the original extension
+     * @param filename Filename to check
+     * @return True if extension is allowed
+     */
+    public static boolean isAllowedImageExtension(String filename) {
+        String extension = FilenameUtils.getExtension(filename).toLowerCase();
+        return ALLOWED_IMAGE_EXTENSIONS.contains(extension);
+    }
+
+    /**
+     * Check if file extension is allowed for documents
+     *
+     * @param filename Filename to check
+     * @return True if extension is allowed
+     */
+    public static boolean isAllowedDocumentExtension(String filename) {
+        String extension = FilenameUtils.getExtension(filename).toLowerCase();
+        return ALLOWED_DOCUMENT_EXTENSIONS.contains(extension);
+    }
+
+    /**
+     * Generate a unique filename
+     *
+     * @param originalFilename Original filename
+     * @return Unique filename
      */
     public static String generateUniqueFilename(String originalFilename) {
         String extension = FilenameUtils.getExtension(originalFilename);
@@ -39,114 +66,63 @@ public class FileUtils {
     }
 
     /**
-     * Check if the file is a valid image
+     * Check if file is an image
      *
-     * @param file The file to check
-     * @return true if the file is a valid image, false otherwise
+     * @param file File to check
+     * @return True if file is an image
      */
-    public static boolean isValidImage(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            return false;
-        }
-
-        String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-        return extension != null && ALLOWED_IMAGE_EXTENSIONS.contains(extension.toLowerCase());
+    public static boolean isImage(MultipartFile file) {
+        return file != null &&
+                !file.isEmpty() &&
+                file.getContentType() != null &&
+                file.getContentType().startsWith("image/");
     }
 
     /**
-     * Check if the file is a valid document
+     * Create directory if it doesn't exist
      *
-     * @param file The file to check
-     * @return true if the file is a valid document, false otherwise
+     * @param directoryPath Directory path to create
+     * @return True if directory exists or was created successfully
      */
-    public static boolean isValidDocument(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            return false;
+    public static boolean createDirectoryIfNotExists(String directoryPath) {
+        File directory = new File(directoryPath);
+        if (!directory.exists()) {
+            return directory.mkdirs();
         }
-
-        String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-        return extension != null && ALLOWED_DOCUMENT_EXTENSIONS.contains(extension.toLowerCase());
+        return true;
     }
 
     /**
-     * Check if the file size is within the allowed limit
+     * Delete file if it exists
      *
-     * @param file The file to check
-     * @return true if the file size is within the allowed limit, false otherwise
+     * @param filePath Path to file
+     * @return True if file was deleted or doesn't exist
      */
-    public static boolean isValidFileSize(MultipartFile file) {
-        if (file == null) {
-            return false;
-        }
-        return file.getSize() <= MAX_FILE_SIZE;
-    }
-
-    /**
-     * Save a file to the specified directory
-     *
-     * @param file The file to save
-     * @param directory The directory to save the file to
-     * @param filename The name to save the file as
-     * @return The path to the saved file
-     * @throws IOException If an error occurs while saving the file
-     */
-    public static Path saveFile(MultipartFile file, String directory, String filename) throws IOException {
-        Path directoryPath = Paths.get(directory);
-        if (!Files.exists(directoryPath)) {
-            Files.createDirectories(directoryPath);
-        }
-
-        Path filePath = directoryPath.resolve(filename);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        return filePath;
-    }
-
-    /**
-     * Delete a file from the filesystem
-     *
-     * @param filePath The path to the file to delete
-     * @return true if the file was deleted, false otherwise
-     */
-    public static boolean deleteFile(String filePath) {
+    public static boolean deleteFileIfExists(String filePath) {
         try {
-            File file = new File(filePath);
-            return file.delete();
-        } catch (Exception e) {
+            Path path = Paths.get(filePath);
+            return Files.deleteIfExists(path);
+        } catch (IOException e) {
             return false;
         }
     }
 
     /**
-     * Get the content type of a file based on its extension
+     * Get file size in human-readable format
      *
-     * @param filename The filename
-     * @return The content type
+     * @param size File size in bytes
+     * @return Human-readable file size
      */
-    public static String getContentType(String filename) {
-        String extension = FilenameUtils.getExtension(filename).toLowerCase();
-        switch (extension) {
-            case "jpg":
-            case "jpeg":
-                return "image/jpeg";
-            case "png":
-                return "image/png";
-            case "gif":
-                return "image/gif";
-            case "pdf":
-                return "application/pdf";
-            case "doc":
-                return "application/msword";
-            case "docx":
-                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-            case "xls":
-                return "application/vnd.ms-excel";
-            case "xlsx":
-                return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            case "csv":
-                return "text/csv";
-            default:
-                return "application/octet-stream";
+    public static String getHumanReadableSize(long size) {
+        final String[] units = new String[] { "B", "KB", "MB", "GB", "TB" };
+        int unitIndex = 0;
+        double unitValue = size;
+
+        while (unitValue > 1024 && unitIndex < units.length - 1) {
+            unitValue /= 1024;
+            unitIndex++;
         }
+
+        return String.format("%.2f %s", unitValue, units[unitIndex]);
     }
 }
