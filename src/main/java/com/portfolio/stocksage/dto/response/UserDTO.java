@@ -31,7 +31,7 @@ public class UserDTO {
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-class RoleDTO {
+public class RoleDTO {
     private Long id;
     private String name;
 }

@@ -114,7 +114,31 @@ public class TransactionServiceImpl implements TransactionService {
         // Return the transaction DTO
         return transactionMapper.toDto(savedTransaction);
     }
+    /**
+     * Get a list of pending transactions older than the specified number of days
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<Transaction> getOldPendingTransactions(int days) {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(days);
+        return transactionRepository.findByStatusAndTransactionDateBefore(
+                TransactionStatus.PENDING, cutoffDate);
+    }
 
+    /**
+     * Get the count of transactions for a specific date range and type
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public int getDailyTransactionCount(LocalDateTime startDate, LocalDateTime endDate, TransactionType type) {
+        List<Transaction> transactions = transactionRepository.findByDateRangeAndType(
+                startDate, endDate, type);
+
+        // Count only completed transactions
+        return (int) transactions.stream()
+                .filter(t -> t.getStatus() == TransactionStatus.COMPLETED)
+                .count();
+    }
     @Override
     @Transactional(readOnly = true)
     public TransactionDTO getTransactionById(Long id) {

@@ -19,6 +19,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     Optional<Transaction> findByTransactionNumber(String transactionNumber);
 
+    /**
+     * Find pending transactions created before a certain date
+     */
+    List<Transaction> findByStatusAndTransactionDateBefore(TransactionStatus status, LocalDateTime date);
+
     boolean existsByTransactionNumber(String transactionNumber);
 
     Page<Transaction> findByStatus(TransactionStatus status, Pageable pageable);

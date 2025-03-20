@@ -6,12 +6,11 @@ import com.portfolio.stocksage.exception.ResourceNotFoundException;
 import com.portfolio.stocksage.repository.NotificationRepository;
 import com.portfolio.stocksage.repository.UserRepository;
 import com.portfolio.stocksage.service.NotificationService;
-import lombok.RequiredArgsConstructor;
+import com.portfolio.stocksage.util.EmailUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,13 +21,25 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final JavaMailSender emailSender;
+    private final EmailUtils emailUtils;
+    private final boolean emailEnabled;
+
+    @Autowired
+    public NotificationServiceImpl(
+            NotificationRepository notificationRepository,
+            UserRepository userRepository,
+            EmailUtils emailUtils,
+            @org.springframework.beans.factory.annotation.Value("${application.email.enabled:false}") boolean emailEnabled) {
+        this.notificationRepository = notificationRepository;
+        this.userRepository = userRepository;
+        this.emailUtils = emailUtils;
+        this.emailEnabled = emailEnabled;
+    }
 
     @Override
     @Transactional
@@ -151,12 +162,16 @@ public class NotificationServiceImpl implements NotificationService {
         // Create in-app notification for inventory managers
         createNotificationForRole(title, message, "INVENTORY_ALERT", "INVENTORY_MANAGER");
 
-        // Send email to inventory managers
-        List<User> inventoryManagers = userRepository.findByRoleName("INVENTORY_MANAGER");
-        for (User manager : inventoryManagers) {
-            if (manager.getEmail() != null && !manager.getEmail().isEmpty()) {
-                sendEmail(manager.getEmail(), title, message);
+        // Send email to inventory managers if email is enabled
+        if (emailEnabled) {
+            List<User> inventoryManagers = userRepository.findByRoleName("INVENTORY_MANAGER");
+            for (User manager : inventoryManagers) {
+                if (manager.getEmail() != null && !manager.getEmail().isEmpty()) {
+                    emailUtils.sendSimpleEmail(manager.getEmail(), title, message);
+                }
             }
+        } else {
+            log.info("Email notifications disabled. Would have sent low stock alert emails.");
         }
 
         return CompletableFuture.completedFuture(null);
@@ -176,9 +191,12 @@ public class NotificationServiceImpl implements NotificationService {
         // Create in-app notification
         createNotification(title, message, "TRANSACTION", userId);
 
-        // Send email
-        if (user.getEmail() != null && !user.getEmail().isEmpty()) {
-            sendEmail(user.getEmail(), title, message);
+        // Send email if enabled
+        if (emailEnabled && user.getEmail() != null && !user.getEmail().isEmpty()) {
+            emailUtils.sendSimpleEmail(user.getEmail(), title, message);
+        } else {
+            log.info("Email notifications disabled. Would have sent transaction notification email to: {}",
+                    user.getEmail() != null ? user.getEmail() : "unknown");
         }
 
         return CompletableFuture.completedFuture(null);
@@ -194,40 +212,28 @@ public class NotificationServiceImpl implements NotificationService {
         createNotificationForRole(title, message, "INVENTORY_ALERT", "INVENTORY_MANAGER");
         createNotificationForRole(title, message, "INVENTORY_ALERT", "ADMIN");
 
-        // Send urgent email to inventory managers and admins
-        List<User> inventoryManagers = userRepository.findByRoleName("INVENTORY_MANAGER");
-        List<User> admins = userRepository.findByRoleName("ADMIN");
+        // Send urgent email to inventory managers and admins if email is enabled
+        if (emailEnabled) {
+            List<User> inventoryManagers = userRepository.findByRoleName("INVENTORY_MANAGER");
+            List<User> admins = userRepository.findByRoleName("ADMIN");
 
-        List<String> emails = inventoryManagers.stream()
-                .map(User::getEmail)
-                .filter(email -> email != null && !email.isEmpty())
-                .collect(Collectors.toList());
+            List<String> emails = inventoryManagers.stream()
+                    .map(User::getEmail)
+                    .filter(email -> email != null && !email.isEmpty())
+                    .collect(Collectors.toList());
 
-        emails.addAll(admins.stream()
-                .map(User::getEmail)
-                .filter(email -> email != null && !email.isEmpty())
-                .collect(Collectors.toList()));
+            emails.addAll(admins.stream()
+                    .map(User::getEmail)
+                    .filter(email -> email != null && !email.isEmpty())
+                    .collect(Collectors.toList()));
 
-        for (String email : emails) {
-            sendEmail(email, title, message);
+            for (String email : emails) {
+                emailUtils.sendSimpleEmail(email, title, message);
+            }
+        } else {
+            log.info("Email notifications disabled. Would have sent stock out alert emails.");
         }
 
         return CompletableFuture.completedFuture(null);
-    }
-
-    /**
-     * Helper method to send an email
-     */
-    private void sendEmail(String to, String subject, String text) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject("[StockSage] " + subject);
-            message.setText(text);
-            emailSender.send(message);
-            log.info("Email sent to {} with subject: {}", to, subject);
-        } catch (Exception e) {
-            log.error("Failed to send email to {} with subject: {}", to, subject, e);
-        }
     }
 }

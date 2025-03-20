@@ -2,6 +2,7 @@ package com.portfolio.stocksage.service;
 
 import com.portfolio.stocksage.dto.request.TransactionCreateDTO;
 import com.portfolio.stocksage.dto.response.TransactionDTO;
+import com.portfolio.stocksage.entity.Transaction;
 import com.portfolio.stocksage.entity.Transaction.TransactionStatus;
 import com.portfolio.stocksage.entity.Transaction.TransactionType;
 import org.springframework.data.domain.Page;
@@ -55,4 +56,22 @@ public interface TransactionService {
     boolean isTransactionNumberUnique(String transactionNumber);
 
     String generateTransactionNumber(TransactionType type);
+
+    /**
+     * Get a list of pending transactions older than the specified number of days
+     *
+     * @param days Number of days
+     * @return List of old pending transactions
+     */
+    List<Transaction> getOldPendingTransactions(int days);
+
+    /**
+     * Get the count of transactions for a specific date range and type
+     *
+     * @param startDate Start date
+     * @param endDate End date
+     * @param type Transaction type
+     * @return Count of transactions
+     */
+    int getDailyTransactionCount(LocalDateTime startDate, LocalDateTime endDate, TransactionType type);
 }
