@@ -74,6 +74,11 @@ Desktop.ini
 application-local.properties
 uploads/
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # Docker volumes
 docker/volumes/
 
