@@ -1,6 +1,8 @@
 package com.portfolio.stocksage.util;
 
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -17,6 +19,8 @@ import java.util.UUID;
  * Utility class for file operations
  */
 public final class FileUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(FileUtils.class);
 
     // Allowed image file extensions
     private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = new HashSet<>(Arrays.asList(
@@ -103,6 +107,7 @@ public final class FileUtils {
             Path path = Paths.get(filePath);
             return Files.deleteIfExists(path);
         } catch (IOException e) {
+            log.error("Failed to delete file: {}", filePath, e);
             return false;
         }
     }

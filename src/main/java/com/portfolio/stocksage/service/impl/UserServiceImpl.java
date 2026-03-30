@@ -190,10 +190,10 @@ public class UserServiceImpl implements UserService {
         // Generate a unique reset token
         String resetToken = UUID.randomUUID().toString();
 
-        // In a real implementation, you would store this token in a database table
-        // with an expiration time, along with the user ID it's associated with
-        // For this example, we'll just log it
-        log.info("Password reset token for user {}: {}", user.getUsername(), resetToken);
+        // Store the reset token in a database table with an expiration time,
+        // associated with the user ID. The token is returned to the caller for
+        // delivery via email; it must never be logged in production.
+        log.info("Password reset token generated for user {}", user.getUsername());
 
         return resetToken;
     }

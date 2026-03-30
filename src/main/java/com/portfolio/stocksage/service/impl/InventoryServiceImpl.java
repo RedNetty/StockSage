@@ -95,10 +95,8 @@ public class InventoryServiceImpl implements InventoryService {
             throw new ResourceNotFoundException("Warehouse not found with id: " + warehouseId);
         }
 
-        Page<Inventory> inventoryPage = inventoryRepository.findAll(pageable);
-        return inventoryPage
-                .map(inventoryMapper::toDto)
-                .filter(inventory -> inventory.getWarehouse().getId().equals(warehouseId));
+        return inventoryRepository.findByWarehouseId(warehouseId, pageable)
+                .map(inventoryMapper::toDto);
     }
 
     @Override

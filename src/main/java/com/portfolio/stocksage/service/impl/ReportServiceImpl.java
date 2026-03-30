@@ -28,6 +28,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -866,8 +867,9 @@ public class ReportServiceImpl implements ReportService {
                 }
 
                 if (report != null) {
-                    // TODO: Send the report to email recipients
                     log.info("Generated scheduled report: {} (ID: {})", report.getTitle(), report.getId());
+                    // Email delivery to recipients should be wired here once the email service
+                    // supports batch report attachments.
                 }
 
             } catch (Exception e) {
@@ -1014,11 +1016,13 @@ public class ReportServiceImpl implements ReportService {
     private Map<String, Object> groupTransactionsByWeek(List<Transaction> transactions) {
         Map<String, Object> result = new HashMap<>();
 
-        // Group transactions by week
+        // Group transactions by ISO week (e.g., "2024-W03")
         Map<String, List<Transaction>> groupedByWeek = transactions.stream()
                 .collect(Collectors.groupingBy(t -> {
                     LocalDateTime date = t.getTransactionDate();
-                    return date.getYear() + "-W" + date.get(ChronoUnit.WEEKS.ordinal());
+                    int weekYear = date.get(IsoFields.WEEK_BASED_YEAR);
+                    int weekNum = date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+                    return weekYear + "-W" + String.format("%02d", weekNum);
                 }));
 
         // Calculate aggregates for each week

@@ -13,6 +13,7 @@ import com.portfolio.stocksage.repository.UserRepository;
 import com.portfolio.stocksage.security.JwtTokenProvider;
 import com.portfolio.stocksage.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,6 +28,9 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+    @Value("${jwt.expiration:86400000}")
+    private long jwtExpirationMs;
 
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
@@ -56,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
         return JwtDTO.builder()
                 .tokenType("Bearer")
                 .accessToken(jwt)
-                .expiresIn(86400000L) // 24 hours in milliseconds
+                .expiresIn(jwtExpirationMs)
                 .user(userDTO)
                 .build();
     }
